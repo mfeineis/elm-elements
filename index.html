@@ -1,0 +1,80 @@
+<html>
+<head>
+  <style>
+    /* you can style your program here */
+  </style>
+</head>
+<body>
+  <script src="js/elm-elements.js"></script>
+  <script src="dist/counter.js"></script>
+  <script>
+    
+    ElmElements.define("elm-counter-simple", Elm.Main, {
+      attributes: {
+        "attr": ["attr", String],
+        "initial-count": ["count", parseInt],
+      },
+      events: {
+        "something.happened": ["fromElm", (type, payload) => ({ type, payload })],
+      },
+      // shutdownSignal: "shutdownRequested",
+      // shadowDOM: false,
+    });
+
+    const ElmCounterBase = ElmElements.build(Elm.Main, {
+      attributes: {
+        "attr": ["attr", String],
+        "initial-count": ["count", parseInt],
+      },
+      events: {
+        "something.happened": ["fromElm", (type, payload) => ({ type, payload })],
+      },
+    });
+    customElements.define("elm-counter", class extends ElmCounterBase {
+      get attr() {
+        return this.getAttribute("attr");
+      }
+      set attr(value) {
+        // this.setAttribute("attr", value);
+        this._app.ports.attrChanged.send(value);
+      }
+    });
+    
+    function changeAttr() {
+      for (const counter of document.querySelectorAll("#counters elm-counter")) {
+        counter.setAttribute("attr", `Here is a dice roll: ${Math.floor(Math.random() * 6) + 1}`);
+      }
+    }
+    
+    function addCounter() {
+      const counter = document.createElement("elm-counter");
+      counter.setAttribute("attr", "a dynamic attribute value");
+      counter.setAttribute("initial-count", (Math.random() * 100).toFixed(0) );
+      const handler = (ev) => {
+        console.log("[DOM] something.happened", ev);
+      };
+      counter.addEventListener("something.happened", handler);
+      counter.cleanup = () => counter.removeEventListener("something.happened", handler);
+      document.querySelector("#counters").appendChild(counter);
+    }
+    
+    function removeCounter() {
+      const counter = document.querySelector("#counters elm-counter:last-child");
+      counter.cleanup && counter.cleanup();
+      document.querySelector("#counters").removeChild(counter);
+    }
+    
+    window.api = { changeAttr, addCounter, removeCounter };
+    
+    // you can use ports and stuff here
+  </script>
+  
+  <button onclick="api.removeCounter()">
+    Remove Counter
+  </button>
+  <button onclick="api.addCounter()">Add Counter</button>
+  <button onclick="api.changeAttr()">Change Attr</button>
+  
+  <div id="counters"></div>
+</body>
+</html>

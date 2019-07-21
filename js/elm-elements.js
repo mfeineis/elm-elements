@@ -66,7 +66,12 @@ window.ElmElements = Object.freeze({
 
             emit(channel, detail) {
                 console.log(this.getAttribute("data-elm-element-id"), "emit", channel, detail);
-                this.dispatchEvent(new CustomEvent(channel, { detail }));
+                this.dispatchEvent(new CustomEvent(channel, {
+                    bubbles: true,
+                    cancelable: false,
+                    composed: true,
+                    detail,
+                }));
             }
 
             attributeChangedCallback(attr, oldValue, value) {

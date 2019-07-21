@@ -1,7 +1,8 @@
+/* global CustomEvent, customElements */
+window.ElmElements = (function (CustomEvent, Object, customElements) {
 
-window.ElmElements = Object.freeze({
-    build(App, definition) {
-        console.log("ElmElements.define", name, App, definition);
+    function create(App, definition) {
+        console.log("ElmElements.create", App, definition);
         const {
             attributes = {},
             events = {},
@@ -15,6 +16,7 @@ window.ElmElements = Object.freeze({
             eventByPortName.set(portName, [eventName, transform]);
         });
 
+        const PREFIX = "__ElmElements$" + Math.floor(Math.random() * 10000000) + "_cid";
         let CID = 0;
         return class extends HTMLElement {
             static get observedAttributes() {
@@ -34,6 +36,28 @@ window.ElmElements = Object.freeze({
                 }
                 this._app = null;
                 this._subscriptions = null;
+                this._reflect = true;
+
+                observedAttributes.forEach((attr) => {
+                    const [name, transform] = attributes[attr];
+                    let value;
+                    Object.defineProperty(this, name, {
+                        configurable: false,
+                        enumerable: false,
+                        get() {
+                            return value;
+                        },
+                        set: (newValue) => {
+                            if (value === newValue) {
+                                return;
+                            }
+                            value = newValue;
+                            if (this._reflect) {
+                                this.setAttribute(attr, newValue);
+                            }
+                        },
+                    });
+                });
             }
             connectedCallback() {
                 const flags = {};
@@ -42,7 +66,7 @@ window.ElmElements = Object.freeze({
                     flags[name] = transform(this.getAttribute(attr));
                 });
 
-                this.setAttribute("data-elm-element-id", `elm-element-${++CID}`);
+                this.setAttribute("data-elm-element-id", `${PREFIX}${++CID}`);
                 console.log(this.getAttribute("data-elm-element-id"), "connectedCallback", flags, this._root);
                 if (!shadowDOM) {
                     this.appendChild(this._root);
@@ -60,8 +84,20 @@ window.ElmElements = Object.freeze({
                         port.subscribe(handler);
                         return () => port.unsubscribe(handler);
                     }
+                    return null;
                 }).filter(Boolean);
+
+                observedAttributes.forEach((attr) => this._upgradeProperty(attr));
+
                 console.log(this.getAttribute("data-elm-element-id"), "app", this._app);
+            }
+
+            _upgradeProperty(prop) {
+                if (this.hasOwnProperty(prop)) {
+                    const value = this[prop];
+                    // delete this[prop];
+                    this[prop] = value;
+                }
             }
 
             emit(channel, detail) {
@@ -74,11 +110,11 @@ window.ElmElements = Object.freeze({
                 }));
             }
 
-            attributeChangedCallback(attr, oldValue, value) {
+            attributeChangedCallback(attr, oldValue, newValue) {
                 if (!this._app) {
                     return;
                 }
-                console.log(this.getAttribute("data-elm-element-id"), "attributeChanged " + attr + ": " + oldValue + "->" + value);
+                console.log(this.getAttribute("data-elm-element-id"), "attributeChanged " + attr + ": " + oldValue + "->" + newValue);
 
                 if (!attributes[attr]) {
                     return;
@@ -89,11 +125,14 @@ window.ElmElements = Object.freeze({
                     return;
                 }
 
-                if (oldValue == value) {
+                if (oldValue == newValue) {
                     return;
                 }
 
-                this._app.ports[portName].send(transform(value));
+                this._app.ports[portName].send(transform(newValue));
+                this._reflect = false;
+                this[attr] = newValue;
+                this._reflect = true;
             }
             disconnectedCallback() {
                 console.log(this.getAttribute("data-elm-element-id"), "Shutting down Elm App and cleaning up...");
@@ -108,10 +147,16 @@ window.ElmElements = Object.freeze({
                 this._app = null;
                 this._root = null;
             }
-        }
-    },
-    define(name, App, definition) {
-        return customElements.define(name, ElmElements.build(App, definition));
-    },
-});
+        };
+    }
+
+    return Object.freeze({
+        define(name, App, definition) {
+            const Element = create(App, definition);
+            customElements.define(name, Element);
+            return Element;
+        },
+    });
+
+}(CustomEvent, Object, customElements));
 

@@ -15,7 +15,7 @@
         "initial-count": ["count", parseInt],
       },
       events: {
-        "something.happened": ["fromElm", (type, payload) => ({ type, payload })],
+        "something.happened": ["fromElm", (payload, type) => ({ type, payload })],
       },
       // shutdownSignal: "shutdownRequested",
       // shadowDOM: false,

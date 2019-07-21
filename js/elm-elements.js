@@ -55,7 +55,7 @@ window.ElmElements = Object.freeze({
                         console.log(this.getAttribute("data-elm-element-id"), "subscribing to port", portName, port);
                         const handler = (data) => {
                             const [channel, transform] = eventByPortName.get(portName);
-                            this.emit(channel, transform(channel, data));
+                            this.emit(channel, transform(data, channel));
                         };
                         port.subscribe(handler);
                         return () => port.unsubscribe(handler);

@@ -4,7 +4,7 @@
   "description": "Easy to use helpers for putting Elm apps into CustomElements",
   "scripts": {
     "build": "elm make src/Main.elm --output=dist/counter.js",
-    "start": "npm run build && serve ."
+    "start": "yarn build && serve ."
   },
   "main": "dist/elm-elements.js",
   "repository": "https://github.com/mfeineis/elm-elements",

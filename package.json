@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Easy to use helpers for putting Elm apps into CustomElements",
   "scripts": {
-    "build": "elm make src/Main.elm --output=dist/counter.js",
+    "build": "elm make src/Counter.elm --output=dist/counter.js",
     "start": "yarn build && serve ."
   },
   "main": "dist/elm-elements.js",

@@ -1,4 +1,4 @@
-port module Main exposing (main)
+port module Counter exposing (main)
 
 import Browser
 import Browser.Events
@@ -12,6 +12,9 @@ port shutdownRequested : (() -> msg) -> Sub msg
 
 
 port attrChanged : (String -> msg) -> Sub msg
+
+
+port anotherChanged : (Value -> msg) -> Sub msg
 
 
 port fromElm : Value -> Cmd msg
@@ -32,6 +35,7 @@ type Msg
     | ShutdownRequested
     | AttrChanged String
     | DocumentClicked
+    | AnotherChanged Value
 
 
 subscriptions { activeState } =
@@ -41,6 +45,7 @@ subscriptions { activeState } =
                 [ Browser.Events.onClick (Decode.succeed DocumentClicked)
                 , shutdownRequested (always ShutdownRequested)
                 , attrChanged AttrChanged
+                , anotherChanged AnotherChanged
                 ]
 
         Stopped ->
@@ -51,6 +56,9 @@ subscriptions { activeState } =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        AnotherChanged value ->
+            ( Debug.log "Do something with 'another' = ..." model, Cmd.none )
+
         AttrChanged value ->
             ( Debug.log ("Do something with 'attr' = " ++ value) model, Cmd.none )
 

@@ -9,15 +9,34 @@
   <script src="dist/counter.js"></script>
   <script>
 
-    ElmElements.define("elm-counter", Elm.Main, {
-      attributes: {
-        "attr": ["attr", String],
-        "initial-count": ["count", parseInt],
-      },
+    ElmElements.define("elm-counter", Elm.Counter, {
+      disconnectPort: "shutdownRequested",
       events: {
-        "something.happened": ["fromElm", (payload, type) => ({ type, payload })],
+          "something.happened": {
+              port: "fromElm",
+              toEventData: (payload, type) => ({
+                  bubbles: true,
+                  composed: true,
+                  detail: { payload, type },
+              }),
+          },
+          "something.else.happened": {
+              port: "fromElm",
+          },
       },
-      // shutdownSignal: "shutdownRequested",
+      props: {
+          attr: {
+              portName: "attrChanged",
+          },
+          count: {
+              attributeName: "initial-count",
+              fromAttribute: parseInt,
+              toAttribute: String,
+          },
+          another: {
+              reflectToAttribute: false,
+          },
+      },
       // shadowDOM: false,
     });
 
@@ -26,6 +45,12 @@
         counter.setAttribute("attr", `Here is a dice roll: ${Math.floor(Math.random() * 6) + 1}`);
       }
     }
+
+   function changeAnother() {
+       for (const counter of document.querySelectorAll("#counters elm-counter")) {
+           counter.another = { it: Math.floor(Math.random() * 6) + 1 };
+       }
+   }
 
     function addCounter() {
       const counter = document.createElement("elm-counter");
@@ -45,7 +70,9 @@
       document.querySelector("#counters").removeChild(counter);
     }
 
-    window.api = { changeAttr, addCounter, removeCounter };
+    window.api = { changeAnother, changeAttr, addCounter, removeCounter };
+
+    document.addEventListener("something.else.happened", (ev) => console.log("something.else.happened", ev));
 
     // you can use ports and stuff here
   </script>
@@ -55,6 +82,7 @@
   </button>
   <button onclick="api.addCounter()">Add Counter</button>
   <button onclick="api.changeAttr()">Change Attr</button>
+  <button onclick="api.changeAnother()">Change Another</button>
 
   <div id="counters"></div>
 </body>
